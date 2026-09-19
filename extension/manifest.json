@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "ContextBridge",
+  "version": "1.0.0",
+  "description": "AI-powered conversation context compression and handoff extension.",
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "permissions": [
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://chatgpt.com/*",
+    "http://127.0.0.1:8000/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://chatgpt.com/*"
+      ],
+      "js": [
+        "content.js"
+      ]
+    }
+  ]
+}

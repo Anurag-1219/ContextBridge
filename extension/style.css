@@ -1,0 +1,56 @@
+body {
+    width: 350px;
+    margin: 0;
+    font-family: Arial, sans-serif;
+}
+
+.container {
+    padding: 20px;
+    text-align: center;
+}
+
+h1 {
+    margin-bottom: 5px;
+}
+
+p {
+    color: #666;
+    font-size: 14px;
+}
+
+button {
+    width: 100%;
+    padding: 10px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+#status {
+    margin-top: 15px;
+    font-size: 13px;
+}
+
+#conversation {
+    margin-top: 15px;
+    text-align: left;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.message {
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+}
+
+.message strong {
+    font-size: 12px;
+}
+
+.message p {
+    color: #222;
+    font-size: 13px;
+    white-space: pre-wrap;
+}
