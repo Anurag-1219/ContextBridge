@@ -173,21 +173,24 @@ def ensure_required_sections(text: str) -> str:
 def compress_with_llm(compression_input: Dict) -> str:
     prompt = build_compression_prompt(compression_input)
 
-    response = ollama.chat(
-        model="qwen3.5:4b",
-        messages=[
-            {
-                "role": "user",
-                "content": prompt,
-            }
-        ],
-        think=False,
-        options={
-            "num_ctx": 2048,
-            "num_predict": 400,
-            "temperature": 0,
-        },
-    )
+    try:
+        response = ollama.chat(
+            model="qwen3.5:4b",
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt,
+                }
+            ],
+            think=False,
+            options={
+                "num_ctx": 2048,
+                "num_predict": 300,
+                "temperature": 0,
+            },
+        )
+    except Exception as exc:
+        raise RuntimeError(f"Ollama compression failed: {exc}") from exc
 
     raw_text = response["message"]["content"].strip()
 

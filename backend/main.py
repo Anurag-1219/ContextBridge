@@ -1,9 +1,9 @@
 ﻿from pathlib import Path
 import ollama
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from typing import List, Dict
+from pydantic import BaseModel, Field
+from typing import List, Dict, Literal
 
 from preprocessing import preprocess_messages, analyze_conversation
 from compression import build_compression_input, compress_with_llm
@@ -40,16 +40,16 @@ app.add_middleware(
 
 
 class Message(BaseModel):
-    role: str
-    content: str
+    role: Literal["user", "assistant", "system"]
+    content: str = Field(..., min_length=1, max_length=10000, strip_whitespace=True)
 
 
 class ConversationRequest(BaseModel):
-    messages: List[Message]
+    messages: List[Message] = Field(..., min_length=1, max_length=100)
 
 
 class CompressionRequest(BaseModel):
-    messages: List[Dict]
+    messages: List[Message] = Field(..., min_length=1, max_length=100)
 
 
 class HandoffExportRequest(BaseModel):
@@ -162,11 +162,17 @@ def collect_evaluation_context(
 def compress_conversation(
     request: CompressionRequest
 ):
+    if not request.messages:
+        raise HTTPException(
+            status_code=400,
+            detail="messages cannot be empty"
+        )
+
 
     raw_messages = [
         {
-            "role": message.get("role", ""),
-            "content": message.get("content", "")
+            "role": message.role,
+            "content": message.content
         }
         for message in request.messages
     ]
@@ -188,9 +194,15 @@ def compress_conversation(
         for message in raw_messages
     )
 
-    compressed_text = compress_with_llm(
-        compression_input
-    )
+    try:
+        compressed_text = compress_with_llm(
+            compression_input
+        )
+    except RuntimeError as exc:
+        raise HTTPException(
+            status_code=503,
+            detail="Compression service unavailable."
+        ) from exc
 
     schema_result = build_compression_schema(
         compressed_text
@@ -388,5 +400,7 @@ def load_handoff():
         "validation": validation,
         "package": package
     }
+
+
 
 
