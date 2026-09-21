@@ -1,0 +1,19 @@
+{
+  "metadata": {
+    "handoff_id": "bdd071ca-7a67-459a-b60b-677acb141881",
+    "created_at": "2026-09-19T09:28:22.653093+00:00",
+    "version": "1.0",
+    "source": "ContextBridge"
+  },
+  "context": {
+    "project_task": "Build fraud detection system.",
+    "requirements": "Use Python and time-aware splitting.",
+    "decisions": "Use chronological train-test split.",
+    "current_state": "Preprocessing pipeline is being developed.",
+    "errors": "ModuleNotFoundError needs to be fixed.",
+    "todos": "Fix import and train the model.",
+    "user_preferences": "Keep the implementation simple.",
+    "code_context": "Python ML pipeline.",
+    "important_context": "Avoid data leakage."
+  }
+}

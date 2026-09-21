@@ -1,0 +1,96 @@
+﻿def evaluate_todos(
+    original_todos: list[str],
+    compressed_text: str,
+    threshold: float = 0.60
+) -> dict:
+
+    compressed_keywords = extract_keywords(
+        compressed_text
+    )
+
+    results = []
+
+    for todo in original_todos:
+
+        todo_keywords = extract_keywords(todo)
+
+        if not todo_keywords:
+            continue
+
+        matched_keywords = set()
+
+        for keyword in todo_keywords:
+
+            if keyword in compressed_keywords:
+                matched_keywords.add(keyword)
+                continue
+
+            synonyms = TODO_SYNONYMS.get(
+                keyword,
+                set()
+            )
+
+            if synonyms & compressed_keywords:
+                matched_keywords.add(keyword)
+                continue
+
+            # Basic word-stem matching
+            for compressed_word in compressed_keywords:
+
+                if (
+                    len(keyword) >= 5
+                    and len(compressed_word) >= 5
+                    and (
+                        keyword.startswith(compressed_word[:5])
+                        or compressed_word.startswith(keyword[:5])
+                    )
+                ):
+                    matched_keywords.add(keyword)
+                    break
+
+        overlap = (
+            len(matched_keywords)
+            / len(todo_keywords)
+        )
+
+        preserved = overlap >= threshold
+
+        results.append({
+            "todo": todo,
+            "preserved": preserved,
+            "overlap": round(overlap, 2),
+            "matched_keywords": sorted(
+                matched_keywords
+            )
+        })
+
+    total_todos = len(results)
+
+    preserved_todos = sum(
+        1
+        for result in results
+        if result["preserved"]
+    )
+
+    lost_todos = (
+        total_todos
+        - preserved_todos
+    )
+
+    preservation_rate = (
+        preserved_todos
+        / total_todos * 100
+        if total_todos
+        else 0.0
+    )
+
+    return {
+        "total_todos": total_todos,
+        "preserved_todos": preserved_todos,
+        "lost_todos": lost_todos,
+        "preservation_rate": round(
+            preservation_rate,
+            2
+        ),
+        "results": results
+    }

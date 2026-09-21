@@ -1,5 +1,4 @@
-﻿from pathlib import Path
-import ollama
+from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -314,60 +313,6 @@ def export_handoff(request: HandoffExportRequest):
         "file": exported_path
     }
 
-
-
-class HandoffContinuationRequest(BaseModel):
-    handoff: Dict
-
-
-
-
-@app.post("/continue-handoff-ai")
-def continue_handoff_ai(request: HandoffContinuationRequest):
-    handoff_prompt = build_handoff_prompt(request.handoff)
-
-    try:
-        response = ollama.chat(
-            model="qwen3.5:4b",
-            messages=[
-                {
-                    "role": "user",
-                    "content": handoff_prompt
-                }
-            ],
-            think=False,
-            options={
-                "num_ctx": 1024,
-                "num_predict": 200,
-                "temperature": 0
-            }
-        )
-
-        continuation = response["message"]["content"].strip()
-
-        return {
-            "success": True,
-            "handoff_prompt": handoff_prompt,
-            "continuation": continuation
-        }
-
-    except Exception as e:
-        return {
-            "success": False,
-            "handoff_prompt": handoff_prompt,
-            "continuation": "",
-            "error": str(e)
-        }
-@app.post("/continue-handoff")
-def continue_handoff(request: HandoffContinuationRequest):
-    handoff_prompt = build_handoff_prompt(request.handoff)
-
-    return {
-        "success": True,
-        "handoff_prompt": handoff_prompt,
-        "message": "Handoff prompt prepared for AI continuation."
-    }
-
 @app.get("/load-handoff")
 def load_handoff():
 
@@ -388,5 +333,4 @@ def load_handoff():
         "validation": validation,
         "package": package
     }
-
 

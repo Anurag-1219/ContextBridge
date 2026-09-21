@@ -1,182 +1,173 @@
-﻿from typing import List, Dict
+﻿from typing import Dict, List
 import ollama
 
 
-def build_compression_input(messages: List[Dict]) -> Dict:
-    context = {
-        "requirements": [],
-        "decisions": [],
-        "errors": [],
-        "todos": [],
-        "preferences": [],
-        "code": []
-    }
+REQUIRED_SECTIONS = [
+    "PROJECT / TASK",
+    "REQUIREMENTS",
+    "DECISIONS",
+    "CURRENT STATE",
+    "ERRORS / ISSUES",
+    "TODO / NEXT STEPS",
+    "USER PREFERENCES",
+    "CODE CONTEXT",
+    "IMPORTANT CONTEXT",
+]
 
-    important_messages = []
+
+def build_compression_input(messages: List[Dict]) -> Dict:
+    conversation_parts = []
 
     for message in messages:
-        score = message.get("importance_score", 0.0)
+        role = str(message.get("role", "unknown")).upper()
+        content = str(message.get("content", "")).strip()
 
-        if score >= 0.40:
-            important_messages.append({
-                "message_id": message["message_id"],
-                "role": message["role"],
-                "content": message["content"],
-                "importance_score": score
-            })
+        if not content:
+            continue
 
-        categories = message.get("categories", [])
+        conversation_parts.append(
+            f"[{role}]\n{content}"
+        )
 
-        if "requirement" in categories:
-            context["requirements"].append(message["content"])
-
-        if "decision" in categories:
-            context["decisions"].append(message["content"])
-
-        if "error" in categories:
-            context["errors"].append({
-                "content": message["content"],
-                "error_details": message.get(
-                    "code_analysis", {}
-                ).get("errors", [])
-            })
-
-        if "todo" in categories:
-            context["todos"].append(message["content"])
-
-        if "preference" in categories:
-            context["preferences"].append(message["content"])
-
-        code_analysis = message.get("code_analysis", {})
-
-        if code_analysis.get("is_code"):
-            context["code"].append({
-                "message_id": message["message_id"],
-                "language": code_analysis.get("language", "unknown"),
-                "code_blocks": code_analysis.get("code_blocks", []),
-                "file_paths": code_analysis.get("file_paths", []),
-                "functions": code_analysis.get("functions", []),
-                "classes": code_analysis.get("classes", []),
-                "errors": code_analysis.get("errors", [])
-            })
+    conversation_text = "\n\n".join(conversation_parts)
 
     return {
-        "important_messages": important_messages,
-        "context": context
+        "message_count": len(conversation_parts),
+        "conversation": conversation_text,
     }
 
 
 def build_llm_text(compression_input: Dict) -> str:
-    context = compression_input["context"]
-    sections = []
-
-    sections.append("=== REQUIREMENTS ===")
-    sections.extend(f"- {item}" for item in context["requirements"])
-
-    sections.append("\n=== DECISIONS ===")
-    sections.extend(f"- {item}" for item in context["decisions"])
-
-    sections.append("\n=== ERRORS ===")
-
-    for error in context["errors"]:
-        sections.append(f"- {error['content']}")
-
-        if error["error_details"]:
-            sections.append(
-                f"  Error details: {', '.join(error['error_details'])}"
-            )
-
-    sections.append("\n=== TODOS ===")
-    sections.extend(f"- {item}" for item in context["todos"])
-
-    sections.append("\n=== PREFERENCES ===")
-    sections.extend(f"- {item}" for item in context["preferences"])
-
-    sections.append("\n=== CODE ===")
-
-    for code_item in context["code"]:
-        sections.append(f"Language: {code_item['language']}")
-
-        if code_item["file_paths"]:
-            sections.append(
-                "Files: " + ", ".join(code_item["file_paths"])
-            )
-
-        if code_item["functions"]:
-            sections.append(
-                "Functions: " + ", ".join(code_item["functions"])
-            )
-
-        if code_item["classes"]:
-            sections.append(
-                "Classes: " + ", ".join(code_item["classes"])
-            )
-
-        for block in code_item["code_blocks"]:
-            sections.append(f"\n```{block['language']}")
-            sections.append(block["content"])
-            sections.append("```")
-
-    sections.append("\n=== IMPORTANT MESSAGES ===")
-
-    for message in compression_input["important_messages"]:
-        sections.append(
-            f"[{message['role'].upper()} | "
-            f"importance={message['importance_score']}]"
-        )
-        sections.append(message["content"])
-
-    return "\n".join(sections)
+    return compression_input.get("conversation", "").strip()
 
 
 def build_compression_prompt(compression_input: Dict) -> str:
-    llm_text = build_llm_text(compression_input)
+    conversation_text = build_llm_text(compression_input)
 
-    prompt = f"""
+    return f"""
 You are a context compression engine.
 
-Compress the conversation context so another AI can continue the task.
+Your job is to create a compact but LOSSLESS continuation context
+for another AI system.
 
-RULES:
+The compressed context will be used by another AI to continue the
+same task without access to the original conversation.
 
-1. Preserve important requirements.
-2. Preserve important decisions.
-3. Preserve unresolved errors.
-4. Preserve TODOs and unfinished work.
-5. Preserve user preferences.
-6. Preserve important code and technical details.
-7. Preserve project/task state.
-8. Remove greetings, repetition and irrelevant information.
-9. Do not invent facts.
-10. Do not change the meaning.
-11. Keep information required for future debugging.
-12. Make the result significantly shorter than the original.
+Do NOT invent information.
+Do NOT remove important technical information just to make the
+summary shorter.
 
-Return exactly these sections:
+You MUST return exactly these sections:
 
 === PROJECT / TASK ===
-
 === REQUIREMENTS ===
-
 === DECISIONS ===
-
 === CURRENT STATE ===
-
 === ERRORS / ISSUES ===
-
 === TODO / NEXT STEPS ===
-
 === USER PREFERENCES ===
-
 === CODE CONTEXT ===
-
 === IMPORTANT CONTEXT ===
 
-=== ORIGINAL CONTEXT ===
-{llm_text}
-"""
+CRITICAL PRESERVATION RULES:
 
-    return prompt.strip()
+1. Preserve the exact main project/task being discussed.
+
+2. Preserve the core objective and what the user is trying to build,
+solve, implement, debug, or achieve.
+
+3. Preserve ALL explicit requirements and constraints.
+
+4. Preserve important technical entities exactly when present,
+including:
+- programming languages
+- frameworks
+- libraries
+- models
+- algorithms
+- datasets
+- project names
+- file paths
+- filenames
+- function names
+- class names
+- APIs
+- tools
+
+5. Preserve important relationships between concepts.
+
+6. Preserve security, correctness and data-quality constraints.
+
+7. Preserve decisions that affect future implementation.
+
+8. Preserve unresolved errors and their causes when known.
+
+9. Preserve TODOs and concrete next steps.
+
+10. Preserve user preferences that affect how the task should continue.
+
+11. Remove greetings, repetition, filler and irrelevant discussion.
+
+12. Do not replace specific technical information with vague wording.
+
+13. If information is present in the conversation, it MUST NOT be
+omitted merely because it appears obvious.
+
+14. NEVER omit any required section header.
+
+15. You MUST output all 9 section headers exactly as specified,
+even when a section has no information.
+
+16. If a section has no information, write exactly:
+None identified from the conversation.
+
+17. The following headers are mandatory and must ALWAYS appear:
+
+=== PROJECT / TASK ===
+=== REQUIREMENTS ===
+=== DECISIONS ===
+=== CURRENT STATE ===
+=== ERRORS / ISSUES ===
+=== TODO / NEXT STEPS ===
+=== USER PREFERENCES ===
+=== CODE CONTEXT ===
+=== IMPORTANT CONTEXT ===
+
+=== CONVERSATION ===
+
+{conversation_text}
+
+=== END CONVERSATION ===
+
+Now produce the compressed context using the exact section structure.
+""".strip()
+
+
+def ensure_required_sections(text: str) -> str:
+    """
+    Ensure every mandatory section exists.
+
+    If the LLM accidentally skips a section,
+    add the missing section with the standard fallback value.
+    """
+
+    text = text.strip()
+
+    missing_sections = []
+
+    for section in REQUIRED_SECTIONS:
+        header = f"=== {section} ==="
+
+        if header not in text:
+            missing_sections.append(section)
+
+    for section in missing_sections:
+        text += (
+            f"\n\n=== {section} ===\n"
+            "None identified from the conversation."
+        )
+
+    return text
 
 
 def compress_with_llm(compression_input: Dict) -> str:
@@ -187,19 +178,17 @@ def compress_with_llm(compression_input: Dict) -> str:
         messages=[
             {
                 "role": "user",
-                "content": prompt
+                "content": prompt,
             }
         ],
         think=False,
         options={
             "num_ctx": 2048,
-            "num_predict": 300
-        }
+            "num_predict": 400,
+            "temperature": 0,
+        },
     )
 
-    content = response["message"]["content"]
+    raw_text = response["message"]["content"].strip()
 
-    if not content or not content.strip():
-        raise RuntimeError("LLM returned an empty compression response.")
-
-    return content.strip()
+    return ensure_required_sections(raw_text)

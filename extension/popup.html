@@ -1,29 +1,72 @@
-<!DOCTYPE html>
-<html lang="en">
+﻿<!DOCTYPE html>
+<html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ContextBridge</title>
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-    <div class="container">
-        <h1>ContextBridge</h1>
+<div class="container">
 
-        <p>AI Conversation Continuity</p>
-
-        <button id="compressBtn">
-            Extract Conversation
-        </button>
-
-        <div id="status"></div>
-
-        <div id="conversation"></div>
+    <div class="header">
+        <div>
+            <h1>ContextBridge</h1>
+            <p class="subtitle">AI Conversation Compressor</p>
+        </div>
+        <span class="version">v1.0</span>
     </div>
 
-    <script src="popup.js"></script>
+    <button id="compressBtn">
+        Compress Conversation
+    </button>
+
+    <div id="status" class="status">
+        Ready
+    </div>
+
+    <div id="stats" class="stats hidden">
+
+        <div class="stat-card">
+            <span>Messages</span>
+            <strong id="messageCount">-</strong>
+        </div>
+
+        <div class="stat-card">
+            <span>Quality</span>
+            <strong id="qualityScore">-</strong>
+        </div>
+
+        <div class="stat-card">
+            <span>Compression</span>
+            <strong id="compressionRatio">-</strong>
+        </div>
+
+    </div>
+
+    <div id="resultContainer" class="result hidden">
+
+        <div class="result-header">
+            <h2>Compressed Context</h2>
+            <span id="contextStatus">Ready</span>
+        </div>
+
+        <textarea
+            id="result"
+            readonly
+            placeholder="Compressed context will appear here..."
+        ></textarea>
+
+        <button id="copyBtn">
+            Copy Context
+        </button>
+
+    </div>
+
+</div>
+
+<script src="popup.js"></script>
 
 </body>
 </html>
