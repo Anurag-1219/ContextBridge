@@ -1,5 +1,6 @@
 ﻿from typing import Dict, List
-import ollama
+
+from llm_service import generate_with_llm
 
 
 REQUIRED_SECTIONS = [
@@ -144,13 +145,6 @@ Now produce the compressed context using the exact section structure.
 
 
 def ensure_required_sections(text: str) -> str:
-    """
-    Ensure every mandatory section exists.
-
-    If the LLM accidentally skips a section,
-    add the missing section with the standard fallback value.
-    """
-
     text = text.strip()
 
     missing_sections = []
@@ -174,24 +168,13 @@ def compress_with_llm(compression_input: Dict) -> str:
     prompt = build_compression_prompt(compression_input)
 
     try:
-        response = ollama.chat(
-            model="qwen3.5:4b",
-            messages=[
-                {
-                    "role": "user",
-                    "content": prompt,
-                }
-            ],
-            think=False,
-            options={
-                "num_ctx": 2048,
-                "num_predict": 300,
-                "temperature": 0,
-            },
+        raw_text = generate_with_llm(
+            prompt,
+            max_tokens=300,
         )
-    except Exception as exc:
-        raise RuntimeError(f"Ollama compression failed: {exc}") from exc
-
-    raw_text = response["message"]["content"].strip()
+    except RuntimeError as exc:
+        raise RuntimeError(
+            f"LLM compression failed: {exc}"
+        ) from exc
 
     return ensure_required_sections(raw_text)
