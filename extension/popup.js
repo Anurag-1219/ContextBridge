@@ -1,4 +1,4 @@
-const BACKEND_URL = "https://contextbridge-f6fv.onrender.com/compress-conversation";
+﻿const BACKEND_URL = "https://contextbridge-f6fv.onrender.com/compress-conversation";
 
 const compressBtn = document.getElementById("compressBtn");
 const copyBtn = document.getElementById("copyBtn");
@@ -14,6 +14,37 @@ const compressionRatio = document.getElementById("compressionRatio");
 const contextStatus = document.getElementById("contextStatus");
 const result = document.getElementById("result");
 
+
+async function ensureContentScript(tabId) {
+    try {
+        await chrome.tabs.sendMessage(tabId, {
+            action: "ping"
+        });
+
+        return;
+    } catch (error) {
+        console.log("Content script not responding. Injecting content.js...");
+    }
+
+    await chrome.scripting.executeScript({
+        target: {
+            tabId: tabId
+        },
+        files: ["content.js"]
+    });
+
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    const pingResponse = await chrome.tabs.sendMessage(tabId, {
+        action: "ping"
+    });
+
+    if (!pingResponse || !pingResponse.success) {
+        throw new Error("ContextBridge content script is not responding.");
+    }
+}
+
+
 compressBtn.addEventListener("click", async () => {
     status.textContent = "Extracting conversation...";
     compressBtn.disabled = true;
@@ -28,9 +59,25 @@ compressBtn.addEventListener("click", async () => {
             throw new Error("Active tab not found.");
         }
 
+        if (
+            !tab.url ||
+            (
+                !tab.url.startsWith("https://chatgpt.com/") &&
+                !tab.url.startsWith("https://chat.openai.com/")
+            )
+        ) {
+            throw new Error(
+                "Please open a ChatGPT conversation before using ContextBridge."
+            );
+        }
+
+        await ensureContentScript(tab.id);
+
         const response = await chrome.tabs.sendMessage(
             tab.id,
-            { action: "extractConversation" }
+            {
+                action: "extractConversation"
+            }
         );
 
         if (!response || !response.success) {
@@ -150,6 +197,7 @@ compressBtn.addEventListener("click", async () => {
         compressBtn.disabled = false;
     }
 });
+
 
 copyBtn.addEventListener("click", async () => {
     if (!result.value) {

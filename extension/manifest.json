@@ -1,4 +1,4 @@
-{
+﻿{
   "manifest_version": 3,
   "name": "ContextBridge",
   "version": "1.0.0",
@@ -12,12 +12,14 @@
   ],
   "host_permissions": [
     "https://chatgpt.com/*",
+    "https://chat.openai.com/*",
     "https://contextbridge-f6fv.onrender.com/*"
   ],
   "content_scripts": [
     {
       "matches": [
-        "https://chatgpt.com/*"
+        "https://chatgpt.com/*",
+        "https://chat.openai.com/*"
       ],
       "js": [
         "content.js"

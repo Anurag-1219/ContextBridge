@@ -1,10 +1,15 @@
-function extractConversation() {
+﻿function extractConversation() {
     const messages = [];
 
-    const elements = document.querySelectorAll('[data-message-author-role]');
+    const elements = document.querySelectorAll(
+        '[data-message-author-role]'
+    );
 
     elements.forEach((element) => {
-        const role = element.getAttribute('data-message-author-role');
+        const role = element.getAttribute(
+            'data-message-author-role'
+        );
+
         const text = element.innerText.trim();
 
         if (text) {
@@ -18,15 +23,25 @@ function extractConversation() {
     return messages;
 }
 
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.action === "extractConversation") {
-        const conversation = extractConversation();
 
-        sendResponse({
-            success: true,
-            messages: conversation
-        });
+chrome.runtime.onMessage.addListener(
+    (request, sender, sendResponse) => {
+
+        if (request.action === "ping") {
+            sendResponse({
+                success: true
+            });
+
+            return;
+        }
+
+        if (request.action === "extractConversation") {
+            const conversation = extractConversation();
+
+            sendResponse({
+                success: true,
+                messages: conversation
+            });
+        }
     }
-
-    return true;
-});
+);
