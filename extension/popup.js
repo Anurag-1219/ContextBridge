@@ -1,4 +1,4 @@
-﻿const BACKEND_URL = "http://127.0.0.1:8001/compress-conversation";
+const BACKEND_URL = "https://contextbridge-f6fv.onrender.com/compress-conversation";
 
 const compressBtn = document.getElementById("compressBtn");
 const copyBtn = document.getElementById("copyBtn");
