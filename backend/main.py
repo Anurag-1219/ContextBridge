@@ -1,4 +1,4 @@
-﻿from pathlib import Path
+from pathlib import Path
 import ollama
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 from typing import List, Dict, Literal
 
 from preprocessing import preprocess_messages, analyze_conversation
-from compression import build_compression_input, compress_with_llm
+from context_compression import build_compression_input, compress_with_llm
 from compression_schema import build_compression_schema
 from handoff import build_handoff, build_handoff_prompt, validate_handoff
 from handoff_metadata import create_handoff_package

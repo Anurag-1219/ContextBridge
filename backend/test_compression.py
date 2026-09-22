@@ -1,5 +1,5 @@
-﻿from preprocessing import preprocess_messages
-from compression import build_compression_input, compress_with_llm
+from preprocessing import preprocess_messages
+from context_compression import build_compression_input, compress_with_llm
 
 
 conversation = [

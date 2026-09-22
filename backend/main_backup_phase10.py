@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from typing import List, Dict
 
 from preprocessing import preprocess_messages, analyze_conversation
-from compression import build_compression_input, compress_with_llm
+from context_compression import build_compression_input, compress_with_llm
 from compression_schema import build_compression_schema
 from handoff import build_handoff, build_handoff_prompt, validate_handoff
 from handoff_metadata import create_handoff_package
